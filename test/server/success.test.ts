@@ -32,7 +32,7 @@ async function importPlugin() {
 }
 
 function makeCtx(overrides: Partial<any> = {}) {
-  const request = new Request('http://localhost/credentials/sign-in', {
+  const request = new Request('http://localhost/sign-in/credentials', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email: 'a@b.com', password: 'x' }),
@@ -92,6 +92,29 @@ describe('credentialsPlugin - success paths', () => {
       verify: async () => ({ ok: true, user: { email: 'a@b.com' } }),
     });
     expect((plugin as any).endpoints.signIn.path).toBe('/sign-in/credentials');
+  });
+
+  it('accepts application/x-www-form-urlencoded', async () => {
+    const credentialsPlugin = await importPlugin();
+    const plugin = credentialsPlugin({
+      path: '/sign-in/credentials',
+      inputSchema: z.object({ email: z.string().email(), otp: z.string() }),
+      verify: async () => ({ ok: true, user: { email: 'a@b.com' } }),
+    });
+    const endpoint = (plugin as any).endpoints.signIn;
+    const body = new URLSearchParams({
+      email: 'a@b.com',
+      otp: '123456',
+    }).toString();
+    const ctx = makeCtx({
+      request: new Request('http://localhost/sign-in/credentials', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body,
+      }),
+    });
+    const res = await endpoint.handler(ctx);
+    expect(res.status).toBe(200);
   });
 
   it('forwards onSessionData and sessionExpiresIn', async () => {

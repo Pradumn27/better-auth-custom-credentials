@@ -93,12 +93,55 @@ export function credentialsPlugin(
         const { adapter, internalAdapter, createAuthCookie, session, logger } =
           ctx.context;
 
+        // Robust body parsing: JSON, form-urlencoded, multipart
         let body: unknown = {};
-        try {
-          body = await req.json();
-        } catch {
-          // ignore
-        }
+        const parseBody = async (): Promise<
+          Record<string, unknown> | unknown
+        > => {
+          const contentType =
+            req.headers.get('content-type')?.toLowerCase() ?? '';
+          // Try JSON first if indicated
+          if (contentType.includes('application/json')) {
+            try {
+              return await req.clone().json();
+            } catch {}
+            try {
+              return await req.json();
+            } catch {}
+          }
+          // Try form-urlencoded
+          if (contentType.includes('application/x-www-form-urlencoded')) {
+            try {
+              const text = await req.clone().text();
+              const params = new URLSearchParams(text);
+              return Object.fromEntries(params.entries());
+            } catch {}
+          }
+          // Try multipart/form-data
+          if (contentType.includes('multipart/form-data')) {
+            try {
+              const fd = await req.clone().formData();
+              const obj: Record<string, unknown> = {};
+              for (const [k, v] of fd.entries()) {
+                obj[k] = typeof v === 'string' ? v : (v as File).name;
+              }
+              return obj;
+            } catch {}
+          }
+          // Fallback: attempt JSON from raw text
+          try {
+            const text = await req.clone().text();
+            if (text) {
+              try {
+                return JSON.parse(text);
+              } catch {
+                // ignore
+              }
+            }
+          } catch {}
+          return {};
+        };
+        body = await parseBody();
 
         const parsed = inputSchema.safeParse(body);
         if (!parsed.success) {
