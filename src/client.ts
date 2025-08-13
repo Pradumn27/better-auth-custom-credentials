@@ -2,13 +2,24 @@ export type CredentialsClientOptions = {
   path?: string; // must match server plugin path (default: "/credentials/sign-in")
 };
 
-type HasFetch = {
-  fetch: (path: string, init?: RequestInit) => Promise<Response>;
+type HasMaybeFetch = {
+  fetch?: (path: string, init?: RequestInit) => Promise<Response>;
+};
+
+export type CredentialsSignIn = (
+  body: Record<string, unknown>,
+  init?: RequestInit
+) => Promise<any>;
+
+export type CredentialsAugmentation = {
+  signIn: {
+    credentials: CredentialsSignIn;
+  };
 };
 
 export function extendAuthClientWithCredentials<
-  T extends HasFetch & Record<string, any>
->(client: T, opts: CredentialsClientOptions = {}): T {
+  T extends Record<string, any> & HasMaybeFetch
+>(client: T, opts: CredentialsClientOptions = {}): T & CredentialsAugmentation {
   const path = opts.path ?? '/credentials/sign-in';
 
   const signIn = (client as any).signIn ?? {};
@@ -17,7 +28,11 @@ export function extendAuthClientWithCredentials<
     body: Record<string, unknown>,
     init?: RequestInit
   ) => {
-    const res = await client.fetch(path, {
+    const fetcher: any = (client as any).fetch ?? (globalThis as any).fetch;
+    if (typeof fetcher !== 'function') {
+      throw new Error('No fetch available on client or global');
+    }
+    const res = await fetcher(path, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -38,7 +53,7 @@ export function extendAuthClientWithCredentials<
     return res.json().catch(() => ({}));
   };
 
-  return client;
+  return client as T & CredentialsAugmentation;
 }
 
 export async function signInWithCredentials(

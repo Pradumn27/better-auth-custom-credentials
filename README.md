@@ -63,3 +63,9 @@ await authClient.signIn.credentials({ email: "jsmith@example.com", password: "se
 // B) Or call the endpoint directly
 await signInWithCredentials("/credentials/sign-in", { email: "jsmith@example.com", password: "secret" });
 ````
+
+## Examples & Tests
+
+- Minimal: `examples/basic-server.ts`, `examples/basic-client.ts`
+- Advanced (custom path/schema/session): `examples/advanced-server.ts`, `examples/advanced-client.ts`
+- Run tests: `pnpm test`
