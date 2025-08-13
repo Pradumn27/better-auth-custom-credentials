@@ -2,10 +2,6 @@ export type CredentialsClientOptions = {
   path?: string; // must match server plugin path (default: "/credentials/sign-in")
 };
 
-type HasMaybeFetch = {
-  fetch?: (path: string, init?: RequestInit) => Promise<Response>;
-};
-
 export type CredentialsSignIn = (
   body: Record<string, unknown>,
   init?: RequestInit
@@ -17,9 +13,10 @@ export type CredentialsAugmentation = {
   };
 };
 
-export function extendAuthClientWithCredentials<
-  T extends Record<string, any> & HasMaybeFetch
->(client: T, opts: CredentialsClientOptions = {}): T & CredentialsAugmentation {
+export function extendAuthClientWithCredentials<T extends Record<string, any>>(
+  client: T,
+  opts: CredentialsClientOptions = {}
+): T & CredentialsAugmentation {
   const path = opts.path ?? '/credentials/sign-in';
 
   const signIn = (client as any).signIn ?? {};
