@@ -1,0 +1,32 @@
+{
+    "name": "better-auth-custom-credentials",
+    "version": "0.1.0",
+    "description": "Credentials (email/password or custom) plugin for Better Auth – NextAuth Credentials-like flow.",
+    "license": "MIT",
+    "type": "module",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js",
+            "require": "./dist/index.cjs"
+        }
+    },
+    "main": "./dist/index.cjs",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "sideEffects": false,
+    "files": [
+        "dist"
+    ],
+    "scripts": {
+        "build": "tsup"
+    },
+    "peerDependencies": {
+        "better-auth": ">=1.2.0",
+        "zod": "^3.23.8"
+    },
+    "devDependencies": {
+        "tsup": "^8.0.1",
+        "typescript": "^5.5.4"
+    }
+}
