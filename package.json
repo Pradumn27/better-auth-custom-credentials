@@ -15,6 +15,23 @@
     "module": "./dist/index.js",
     "types": "./dist/index.d.ts",
     "sideEffects": false,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Pradumn27/better-auth-custom-credentials.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Pradumn27/better-auth-custom-credentials/issues"
+  },
+  "homepage": "https://github.com/Pradumn27/better-auth-custom-credentials#readme",
+  "keywords": [
+    "better-auth",
+    "credentials",
+    "nextauth",
+    "auth",
+    "plugin",
+    "zod",
+    "typescript"
+  ],
     "files": [
         "dist"
     ],
