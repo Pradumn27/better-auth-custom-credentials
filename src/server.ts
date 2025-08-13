@@ -65,7 +65,17 @@ const defaultSchema = z.object({
 export function credentialsPlugin(
   opts: CredentialsPluginOptions
 ): BetterAuthPlugin {
-  const path = opts.path ?? '/credentials/sign-in';
+  const normalizePath = (p?: string): string => {
+    const raw = p ?? '/credentials/sign-in';
+    // Strip Better Auth default base if user passed full path
+    let out = raw.replace(/^\/?api\/auth\/?/i, '/');
+    // Ensure leading slash
+    if (!out.startsWith('/')) out = '/' + out;
+    // Collapse duplicate slashes
+    out = out.replace(/\/+?/g, '/');
+    return out;
+  };
+  const path = normalizePath(opts.path);
   const inputSchema = opts.inputSchema ?? defaultSchema;
   const autoSignUp = opts.autoSignUp ?? true;
 
