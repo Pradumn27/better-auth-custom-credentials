@@ -88,10 +88,10 @@ describe('credentialsPlugin - success paths', () => {
   it('normalizes full path including base to relative path', async () => {
     const credentialsPlugin = await importPlugin();
     const plugin = credentialsPlugin({
-      path: '/api/auth/credentials/sign-in',
+      path: '/api/auth/sign-in/credentials',
       verify: async () => ({ ok: true, user: { email: 'a@b.com' } }),
     });
-    expect((plugin as any).endpoints.signIn.path).toBe('/credentials/sign-in');
+    expect((plugin as any).endpoints.signIn.path).toBe('/sign-in/credentials');
   });
 
   it('forwards onSessionData and sessionExpiresIn', async () => {

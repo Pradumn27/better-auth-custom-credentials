@@ -1,5 +1,5 @@
 export type CredentialsClientOptions = {
-  path?: string; // server plugin relative path (default: "/credentials/sign-in")
+  path?: string; // server plugin relative path (default: "/sign-in/credentials")
   basePath?: string; // Better Auth mount base (default: "/api/auth")
 };
 
@@ -22,7 +22,7 @@ export function extendAuthClientWithCredentials<T extends Record<string, any>>(
     const base = opts.basePath ?? '/api/auth';
     // If full URL provided, use as-is
     if (p && /^(https?:)?\/\//i.test(p)) return p;
-    const provided = p ?? '/credentials/sign-in';
+    const provided = p ?? '/sign-in/credentials';
     // If caller already provided an absolute API path, use it
     if (provided.startsWith('/api/')) {
       return provided.replace(/\/+?/g, '/');

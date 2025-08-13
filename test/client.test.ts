@@ -47,13 +47,13 @@ describe('client helpers', () => {
     );
   });
 
-  it('defaults to /api/auth/credentials/sign-in when no path provided', async () => {
+  it('defaults to /api/auth/sign-in/credentials when no path provided', async () => {
     const fetchMock = vi.fn(
       async () => new Response(JSON.stringify({ ok: true }), { status: 200 })
     );
     const client = extendAuthClientWithCredentials({ fetch: fetchMock } as any);
     await client.signIn.credentials({ email: 'a@b.com', password: 'x' });
-    expect(fetchMock.mock.calls[0][0]).toBe('/api/auth/credentials/sign-in');
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/auth/sign-in/credentials');
   });
 
   it('prefixes relative path with basePath', async () => {
@@ -63,12 +63,12 @@ describe('client helpers', () => {
     const client = extendAuthClientWithCredentials(
       { fetch: fetchMock } as any,
       {
-        path: '/credentials/sign-in',
+        path: '/sign-in/credentials',
         basePath: '/api/auth',
       }
     );
     await client.signIn.credentials({ email: 'a@b.com', password: 'x' });
-    expect(fetchMock.mock.calls[0][0]).toBe('/api/auth/credentials/sign-in');
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/auth/sign-in/credentials');
   });
 
   it('uses absolute URL path as-is', async () => {
@@ -78,12 +78,12 @@ describe('client helpers', () => {
     const client = extendAuthClientWithCredentials(
       { fetch: fetchMock } as any,
       {
-        path: 'https://example.com/api/auth/credentials/sign-in',
+        path: 'https://example.com/api/auth/sign-in/credentials',
       }
     );
     await client.signIn.credentials({ email: 'a@b.com', password: 'x' });
     expect(fetchMock.mock.calls[0][0]).toBe(
-      'https://example.com/api/auth/credentials/sign-in'
+      'https://example.com/api/auth/sign-in/credentials'
     );
   });
 

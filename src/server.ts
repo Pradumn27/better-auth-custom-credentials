@@ -66,7 +66,7 @@ export function credentialsPlugin(
   opts: CredentialsPluginOptions
 ): BetterAuthPlugin {
   const normalizePath = (p?: string): string => {
-    const raw = p ?? '/credentials/sign-in';
+    const raw = p ?? '/sign-in/credentials';
     // Strip Better Auth default base if user passed full path
     let out = raw.replace(/^\/?api\/auth\/?/i, '/');
     // Ensure leading slash
