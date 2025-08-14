@@ -78,59 +78,30 @@ export function credentialsPlugin(
         const { adapter, internalAdapter, createAuthCookie, logger } =
           ctx.context;
 
-        // Robust body parsing: JSON, form-urlencoded, multipart; prefer ctx-provided body if available
+        // Simplified body parsing
         let body: unknown = {};
         const hintedBody = (ctx as any)?.body ?? (ctx as any)?.requestBody;
         if (hintedBody && typeof hintedBody === 'object') {
           body = hintedBody;
         } else {
-          const parseBody = async (): Promise<
-            Record<string, unknown> | unknown
-          > => {
+          try {
             const contentType =
               req.headers.get('content-type')?.toLowerCase() ?? '';
-            // Try JSON first if indicated
             if (contentType.includes('application/json')) {
-              try {
-                return await req.clone().json();
-              } catch {}
-              try {
-                return await req.json();
-              } catch {}
+              body = await req.json();
+            } else if (
+              contentType.includes('application/x-www-form-urlencoded')
+            ) {
+              const text = await req.text();
+              const params = new URLSearchParams(text);
+              body = Object.fromEntries(params.entries());
+            } else {
+              // Fallback to JSON
+              body = await req.json().catch(() => ({}));
             }
-            // Try form-urlencoded
-            if (contentType.includes('application/x-www-form-urlencoded')) {
-              try {
-                const text = await req.clone().text();
-                const params = new URLSearchParams(text);
-                return Object.fromEntries(params.entries());
-              } catch {}
-            }
-            // Try multipart/form-data
-            if (contentType.includes('multipart/form-data')) {
-              try {
-                const fd = await req.clone().formData();
-                const obj: Record<string, unknown> = {};
-                for (const [k, v] of fd.entries()) {
-                  obj[k] = typeof v === 'string' ? v : v.name;
-                }
-                return obj;
-              } catch {}
-            }
-            // Fallback: attempt JSON from raw text
-            try {
-              const text = await req.clone().text();
-              if (text) {
-                try {
-                  return JSON.parse(text);
-                } catch {
-                  // ignore
-                }
-              }
-            } catch {}
-            return {};
-          };
-          body = await parseBody();
+          } catch {
+            body = {};
+          }
         }
 
         const parsed = inputSchema.safeParse(body);
@@ -197,10 +168,7 @@ export function credentialsPlugin(
             logger.error('credentials:createUser_failed', e as any);
             if (isUniqueViolation(e)) {
               for (let attempt = 0; attempt < 3 && !user; attempt++) {
-                // small delay before refetch to allow concurrent tx to commit
-
                 await new Promise((r) => setTimeout(r, 50));
-
                 user = await fetchUserByEmail(email);
               }
             }
@@ -219,9 +187,7 @@ export function credentialsPlugin(
         }
 
         const now = Date.now();
-        // Determine expiry in seconds. If not provided, default to 7 days.
         const defaultExpSec = opts.sessionExpiresIn ?? 60 * 60 * 24 * 7;
-        // rememberMe (if present) can extend expiry, customize as you like
         const remember = (input as any).rememberMe === true;
         const expiresInSec = remember ? defaultExpSec : defaultExpSec;
         const expiresAt = new Date(now + expiresInSec * 1000);

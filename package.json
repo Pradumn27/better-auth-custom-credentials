@@ -1,20 +1,38 @@
 {
     "name": "better-auth-custom-credentials",
-    "version": "0.1.7",
-    "description": "Credentials (email/password or custom) plugin for Better Auth – NextAuth Credentials-like flow.",
-    "license": "MIT",
-    "type": "module",
+    "version": "0.1.8",
+    "description": "A Credentials (NextAuth-like) plugin for Better Auth",
+    "main": "./dist/index.cjs",
+    "module": "./dist/index.mjs",
+    "types": "./dist/index.d.ts",
     "exports": {
         ".": {
             "types": "./dist/index.d.ts",
-            "import": "./dist/index.js",
+            "import": "./dist/index.mjs",
             "require": "./dist/index.cjs"
         }
     },
-    "main": "./dist/index.cjs",
-    "module": "./dist/index.js",
-    "types": "./dist/index.d.ts",
     "sideEffects": false,
+    "files": [
+        "dist",
+        "LICENSE.md",
+        "README.md"
+    ],
+    "scripts": {
+        "build": "tsup",
+        "dev": "tsup --watch",
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "prepublishOnly": "pnpm build"
+    },
+    "keywords": [
+        "better-auth",
+        "authentication",
+        "credentials",
+        "plugin",
+        "auth",
+        "nextauth"
+    ],
     "repository": {
         "type": "git",
         "url": "git+https://github.com/Pradumn27/better-auth-custom-credentials.git"
@@ -23,31 +41,20 @@
         "url": "https://github.com/Pradumn27/better-auth-custom-credentials/issues"
     },
     "homepage": "https://github.com/Pradumn27/better-auth-custom-credentials#readme",
-    "keywords": [
-        "better-auth",
-        "credentials",
-        "nextauth",
-        "auth",
-        "plugin",
-        "zod",
-        "typescript"
-    ],
-    "files": [
-        "dist"
-    ],
-    "scripts": {
-        "build": "tsup",
-        "test": "vitest run",
-        "test:watch": "vitest"
-    },
+    "author": "Pradumn27",
+    "license": "MIT",
     "peerDependencies": {
-        "better-auth": ">=1.2.0",
+        "better-auth": ">=1.0.0",
         "zod": ">=3.23.8"
     },
     "devDependencies": {
-        "@types/node": "^20.14.11",
-        "tsup": "^8.0.1",
-        "typescript": "^5.5.4",
-        "vitest": "^2.0.5"
+        "@types/node": "^20.0.0",
+        "tsup": "^8.0.0",
+        "typescript": "^5.0.0",
+        "vitest": "^2.0.0",
+        "zod": "^3.25.0"
+    },
+    "engines": {
+        "node": ">=18.0.0"
     }
 }

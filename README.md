@@ -354,7 +354,7 @@ onSessionData: async ({ verified, userRecord, req }) => {
     jwt,                    // Store JWT for API calls
     permissions,            // User permissions
     lastLogin: new Date().toISOString(),
-    customField: "value",   // Any custom data
+    customField: 'value',   // Any custom data
   };
 },
 ```
