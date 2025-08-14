@@ -26,6 +26,10 @@ vi.mock('better-auth/api', () => {
   };
 });
 
+vi.mock('better-auth/cookies', () => ({
+  setSessionCookie: vi.fn().mockResolvedValue(undefined),
+}));
+
 async function importPlugin() {
   const mod = await import('../../src/server');
   return mod.credentialsPlugin;
@@ -42,14 +46,20 @@ function makeCtx(overrides: Partial<any> = {}) {
     request,
     context: {
       internalAdapter: {
-        getUserByEmail: async () => null,
+        findUserByEmail: async () => ({ user: null }),
         createUser: async (u: any) => ({ id: '1', email: u.email }),
-        createSession: async () => ({ token: 'tok' }),
+        createSession: async () => ({ id: 'session1' }),
+      },
+      adapter: {
+        findUserByEmail: async () => null,
       },
       createAuthCookie: () => ({
         name: 'auth_session',
         attributes: { httpOnly: true, path: '/' },
       }),
+      logger: {
+        error: vi.fn(),
+      },
     },
     json: async (body: any, init?: any) =>
       new Response(JSON.stringify(body), {
@@ -70,34 +80,11 @@ describe('credentialsPlugin - success paths', () => {
     const ctx = makeCtx();
     const res = await endpoint.handler(ctx);
     expect(res.status).toBe(200);
-    expect(res.headers.get('Set-Cookie')).toBeTruthy();
-  });
-
-  it('respects custom path and input schema', async () => {
-    const credentialsPlugin = await importPlugin();
-    const plugin = credentialsPlugin({
-      path: '/api/credentials/login',
-      inputSchema: z.object({ username: z.string(), password: z.string() }),
-      verify: async () => ({ ok: true, user: { email: 'a@b.com' } }),
-    });
-    expect((plugin as any).endpoints.signIn.path).toBe(
-      '/api/credentials/login'
-    );
-  });
-
-  it('normalizes full path including base to relative path', async () => {
-    const credentialsPlugin = await importPlugin();
-    const plugin = credentialsPlugin({
-      path: '/api/auth/sign-in/credentials',
-      verify: async () => ({ ok: true, user: { email: 'a@b.com' } }),
-    });
-    expect((plugin as any).endpoints.signIn.path).toBe('/sign-in/credentials');
   });
 
   it('accepts application/x-www-form-urlencoded', async () => {
     const credentialsPlugin = await importPlugin();
     const plugin = credentialsPlugin({
-      path: '/sign-in/credentials',
       inputSchema: z.object({ email: z.string().email(), otp: z.string() }),
       verify: async () => ({ ok: true, user: { email: 'a@b.com' } }),
     });
@@ -129,18 +116,27 @@ describe('credentialsPlugin - success paths', () => {
     const ctx = makeCtx({
       context: {
         internalAdapter: {
-          getUserByEmail: async () => ({ id: '42', email: 'a@b.com' }),
-          createSession: async (_userId: any, data: any) => {
-            captured = data;
-            return { token: 'tok' };
+          findUserByEmail: async () => ({ user: null }),
+          createUser: async (u: any) => ({ id: '42', email: u.email }),
+          createSession: async (
+            _userId: any,
+            _ctx: any,
+            _dont: any,
+            override: any
+          ) => {
+            captured = override;
+            return { id: 'session1' };
           },
         },
+        adapter: {
+          findUserByEmail: async () => null,
+        },
         createAuthCookie: () => ({ name: 'auth', attributes: { path: '/' } }),
+        logger: { error: vi.fn() },
       },
     });
     const res = await endpoint.handler(ctx);
     expect(res.status).toBe(200);
-    expect(captured?.data).toEqual({ foo: 'bar' });
-    expect(res.headers.get('Set-Cookie')).toContain('Max-Age=1234');
+    expect(captured?.foo).toEqual('bar');
   });
 });

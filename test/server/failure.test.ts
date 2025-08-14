@@ -26,13 +26,17 @@ vi.mock('better-auth/api', () => {
   };
 });
 
+vi.mock('better-auth/cookies', () => ({
+  setSessionCookie: vi.fn().mockResolvedValue(undefined),
+}));
+
 async function importPlugin() {
   const mod = await import('../../src/server');
   return mod.credentialsPlugin;
 }
 
 function makeCtx(body: any) {
-  const request = new Request('http://localhost/credentials/sign-in', {
+  const request = new Request('http://localhost/sign-in/credentials/', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -42,14 +46,20 @@ function makeCtx(body: any) {
     request,
     context: {
       internalAdapter: {
-        getUserByEmail: async () => null,
+        findUserByEmail: async () => ({ user: null }),
         createUser: async (u: any) => ({ id: '1', email: u.email }),
-        createSession: async () => ({ token: 'tok' }),
+        createSession: async () => ({ id: 'session1' }),
+      },
+      adapter: {
+        findUserByEmail: async () => null,
       },
       createAuthCookie: () => ({
         name: 'auth_session',
         attributes: { httpOnly: true, path: '/' },
       }),
+      logger: {
+        error: vi.fn(),
+      },
     },
     json: async (body: any, init?: any) =>
       new Response(JSON.stringify(body), {
@@ -121,6 +131,30 @@ describe('credentialsPlugin - failure paths', () => {
     expect(err.status).toBe(500);
   });
 
+  it('recovers from duplicate email race by refetching', async () => {
+    const credentialsPlugin = await importPlugin();
+    const plugin = credentialsPlugin({
+      verify: async () => ({ ok: true, user: { email: 'A@B.com' } }),
+    });
+    const endpoint = (plugin as any).endpoints.signIn;
+    const ctx = makeCtx({ email: 'A@B.com', password: 'x' });
+    // Simulate duplicate key on first create, then user appears
+    let first = true;
+    ctx.context.internalAdapter.createUser = async () => {
+      if (first) {
+        first = false;
+        const err: any = new Error('duplicate key value');
+        err.code = '23505';
+        throw err;
+      }
+      return { id: '1', email: 'a@b.com' };
+    };
+    ctx.context.internalAdapter.findUserByEmail = async () =>
+      first ? { user: null } : { user: { id: '1', email: 'a@b.com' } };
+    const res = await endpoint.handler(ctx);
+    expect(res.status).toBe(200);
+  });
+
   it('500 when createSession fails', async () => {
     const credentialsPlugin = await importPlugin();
     const plugin = credentialsPlugin({
@@ -132,7 +166,9 @@ describe('credentialsPlugin - failure paths', () => {
       id: '1',
       email: u.email,
     });
-    ctx.context.internalAdapter.createSession = async () => null;
+    ctx.context.internalAdapter.createSession = async () => ({
+      id: null as any,
+    });
     const err = await endpoint.handler(ctx).catch((e: any) => e);
     expect(err.status).toBe(500);
   });

@@ -9,4 +9,3 @@ export {
   extendAuthClientWithCredentials,
   signInWithCredentials,
 } from './client';
-export type { CredentialsClientOptions } from './client';

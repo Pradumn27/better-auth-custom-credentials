@@ -1,6 +1,6 @@
 {
     "name": "better-auth-custom-credentials",
-    "version": "0.1.6",
+    "version": "0.1.7",
     "description": "Credentials (email/password or custom) plugin for Better Auth – NextAuth Credentials-like flow.",
     "license": "MIT",
     "type": "module",

@@ -1,8 +1,3 @@
-export type CredentialsClientOptions = {
-  path?: string; // server plugin relative path (default: "/sign-in/credentials")
-  basePath?: string; // Better Auth mount base (default: "/api/auth")
-};
-
 export type CredentialsSignIn = (
   body: Record<string, unknown>,
   init?: RequestInit
@@ -15,26 +10,9 @@ export type CredentialsAugmentation = {
 };
 
 export function extendAuthClientWithCredentials<T extends Record<string, any>>(
-  client: T,
-  opts: CredentialsClientOptions = {}
+  client: T
 ): T & CredentialsAugmentation {
-  const normalizePath = (p?: string): string => {
-    const base = opts.basePath ?? '/api/auth';
-    // If full URL provided, use as-is
-    if (p && /^(https?:)?\/\//i.test(p)) return p;
-    const provided = p ?? '/sign-in/credentials';
-    // If caller already provided an absolute API path, use it
-    if (provided.startsWith('/api/')) {
-      return provided.replace(/\/+?/g, '/');
-    }
-    // Otherwise, treat as relative to Better Auth base
-    const joined = `${base.replace(/\/+?$/g, '')}/${provided.replace(
-      /^\/+?/g,
-      ''
-    )}`;
-    return joined.replace(/\/+?/g, '/');
-  };
-  const path = normalizePath(opts.path);
+  const path = '/sign-in/credentials';
 
   const signIn = (client as any).signIn ?? {};
   (client as any).signIn = signIn;
@@ -47,10 +25,11 @@ export function extendAuthClientWithCredentials<T extends Record<string, any>>(
       throw new Error('No fetch available on client or global');
     }
     const res = await fetcher(path, {
+      ...init,
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
-      ...init,
+      credentials: 'include',
     });
 
     if (!res.ok) {
